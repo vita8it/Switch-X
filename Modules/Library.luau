@@ -3946,54 +3946,55 @@ Nodes.Application = function(Folder, Args)
 
             Signal:Connect(function(Type, Info)
                 if Type == "OptionSearch" and Framework.Pages then
-
-                    -- Debounce
                     if SearchThread then
                         task.cancel(SearchThread)
                     end
 
                     SearchThread = task.delay(0.12, function()
-
                         local Found = false
                         local Query = string.lower(Info)
                         local CurrentPage = PageLayout.CurrentPage
 
-                        -- Skip ถ้า query ไม่เปลี่ยน
                         if Query == LastSearchQuery then
                             return
                         end
+
                         LastSearchQuery = Query
 
                         local SectionVisible = {}
+
+                        local function Restore(Data)
+                            if Data.Title.RichText then Data.Title.RichText = false end
+                            if Data.Title.Text ~= Data.OriginalTitle then
+                                Data.Title.Text = Data.OriginalTitle
+                            end
+
+                            if Data.SectionTitle.RichText then Data.SectionTitle.RichText = false end
+                            if Data.SectionTitle.Text ~= Data.OriginalSectionTitle then
+                                Data.SectionTitle.Text = Data.OriginalSectionTitle
+                            end
+
+                            if Data.Desc and not Data.Row:GetAttribute("Dropdown") then
+                                if Data.Desc.RichText then Data.Desc.RichText = false end
+                                if Data.Desc.Text ~= Data.OriginalDesc then
+                                    Data.Desc.Text = Data.OriginalDesc
+                                end
+                            end
+                        end
 
                         for _, Data in Application.Searching do
                             if not SectionVisible[Data.Section] then
                                 SectionVisible[Data.Section] = {
                                     Original = Data.Original,
                                     Match = false,
-                                    Rows = {}
+                                    Rows = {},
                                 }
                             end
 
                             if Query == "" then
                                 if Data.Row.Visible ~= true then Data.Row.Visible = true end
 
-                                if Data.Title.RichText then Data.Title.RichText = false end
-                                if Data.Title.Text ~= Data.OriginalTitle then
-                                    Data.Title.Text = Data.OriginalTitle
-                                end
-
-                                if Data.SectionTitle.RichText then Data.SectionTitle.RichText = false end
-                                if Data.SectionTitle.Text ~= Data.OriginalSectionTitle then
-                                    Data.SectionTitle.Text = Data.OriginalSectionTitle
-                                end
-
-                                if Data.Desc and not Data.Row:GetAttribute('Dropdown') then
-                                    if Data.Desc.RichText then Data.Desc.RichText = false end
-                                    if Data.Desc.Text ~= Data.OriginalDesc then
-                                        Data.Desc.Text = Data.OriginalDesc
-                                    end
-                                end
+                                Restore(Data)
 
                                 table.insert(SectionVisible[Data.Section].Rows, Data.RowModule)
                                 SectionVisible[Data.Section].Match = true
@@ -4007,12 +4008,9 @@ Nodes.Application = function(Folder, Args)
                                 local DescLow = Data.OriginalDescLower
                                     or (Data.OriginalDesc and string.lower(Data.OriginalDesc) or "")
 
-                                local Match =
-                                    string.find(TitleLow, Query, 1, true)
-                                    or string.find(DescLow, Query, 1, true)
-                                    or string.find(SectionTitleLow, Query, 1, true)
-
-                                local IsMatch = Match ~= nil
+                                local IsMatch = string.find(TitleLow, Query, 1, true) ~= nil
+                                    or string.find(DescLow, Query, 1, true) ~= nil
+                                    or string.find(SectionTitleLow, Query, 1, true) ~= nil
 
                                 if Data.Row.Visible ~= IsMatch then
                                     Data.Row.Visible = IsMatch
@@ -4027,7 +4025,7 @@ Nodes.Application = function(Folder, Args)
                                     if not Data.SectionTitle.RichText then Data.SectionTitle.RichText = true end
                                     Data.SectionTitle.Text = Nodes.Highlight(Data.OriginalSectionTitle, Info)
 
-                                    if Data.Desc and not Data.Row:GetAttribute('Dropdown') then
+                                    if Data.Desc and not Data.Row:GetAttribute("Dropdown") then
                                         if not Data.Desc.RichText then Data.Desc.RichText = true end
                                         Data.Desc.Text = Nodes.Highlight(Data.OriginalDesc, Info)
                                     end
@@ -4035,33 +4033,19 @@ Nodes.Application = function(Folder, Args)
                                     SectionVisible[Data.Section].Match = true
                                     table.insert(SectionVisible[Data.Section].Rows, Data.RowModule)
                                 else
-                                    if Data.Title.RichText then Data.Title.RichText = false end
-                                    if Data.Title.Text ~= Data.OriginalTitle then
-                                        Data.Title.Text = Data.OriginalTitle
-                                    end
-
-                                    if Data.SectionTitle.RichText then Data.SectionTitle.RichText = false end
-                                    if Data.SectionTitle.Text ~= Data.OriginalSectionTitle then
-                                        Data.SectionTitle.Text = Data.OriginalSectionTitle
-                                    end
-
-                                    if Data.Desc and not Data.Row:GetAttribute('Dropdown') then
-                                        if Data.Desc.RichText then Data.Desc.RichText = false end
-                                        if Data.Desc.Text ~= Data.OriginalDesc then
-                                            Data.Desc.Text = Data.OriginalDesc
-                                        end
-                                    end
+                                    Restore(Data)
                                 end
                             end
                         end
 
                         for Section, Data in SectionVisible do
                             local ShouldShow = Query == "" or Data.Match
-                            local TargetParent = ShouldShow and CurrentPage or Data.Original
+                            local TargetParent = Query ~= "" and Data.Match and CurrentPage or Data.Original or Section.Parent
 
                             if Section.Parent ~= TargetParent then
                                 Section.Parent = TargetParent
                             end
+
                             if Section.Visible ~= ShouldShow then
                                 Section.Visible = ShouldShow
                             end
@@ -4137,19 +4121,23 @@ Nodes.Application = function(Folder, Args)
                     return nil
                 end
 
-                if Type == 'TextChanged' then
+                if Type == "TextChanged" then
                     if Info[3] then
                         local TotalTabs = #Application.Tabs
 
                         Nodes.Tween(BackButton.ImageLabel, {
-                            Time = 0.2, Style = "Linear", Direction = "Out",
+                            Time = 0.2,
+                            Style = "Linear",
+                            Direction = "Out",
                             Goal = { ImageTransparency = (TotalTabs <= 1 or Info[3] <= 1) and 0.6 or 0 },
                         }):Play()
 
                         Nodes.Tween(NextButton.ImageLabel, {
-                            Time = 0.2, Style = "Linear", Direction = "Out",
+                            Time = 0.2,
+                            Style = "Linear",
+                            Direction = "Out",
                             Goal = { ImageTransparency = (TotalTabs <= 1 or Info[3] >= TotalTabs) and 0.6 or 0 },
-                        }):Play() 
+                        }):Play()
                     end
 
                     Title.Text = Info[1]
