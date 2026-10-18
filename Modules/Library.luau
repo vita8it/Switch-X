@@ -2590,6 +2590,9 @@ Nodes.Application = function(Folder, Args)
     end
 
     Application:NewElement("@Window", function()
+        local OldScreen = Nodes.Parent:FindFirstChild(Folder)
+        if OldScreen then OldScreen:Destroy() end
+        
         local ScreenGui = Nodes.New("ScreenGui", {
             ZIndexBehavior = ZIndexBehavior.Global,
             IgnoreGuiInset = true,
