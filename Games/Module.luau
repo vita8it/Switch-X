@@ -707,10 +707,8 @@ Module.BladeHits = (function()
         local LeftClick = Equipped:FindFirstChild("LeftClickRemote")
         if not LeftClick then return end
 
-        local Unit = (self.__LocalPosition - Closest:GetPivot().Position).Unit
-
-        LeftClick:FireServer(false)
-        LeftClick:FireServer(Unit, 2)
+        local Direction = (self.__LocalPosition - Closest:GetPivot().Position).Unit
+        for i = 1, 4 do LeftClick:FireServer(Direction, i) end
     end
 
     function BladeHits:GetClosestCloud()
@@ -2518,7 +2516,7 @@ Module.SkillManager = (function()
 
         if tick() - SkillManager.__LastSkillUse < 0.2 then return end
 
-        local Skill = CooldownService.__equiper(Selected)
+        local Skill = CooldownService.__equiper(Selected or { "Z", "X", "C", "V" })
         if not Skill then return end
 
         VirtualInputManager:SendKeyEvent(true, Enum.KeyCode[Skill], false, game)
