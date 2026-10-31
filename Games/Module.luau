@@ -703,14 +703,6 @@ Module.BladeHits = (function()
         self:Hit(Closest, Targets, nil, self.__CoroutineId)
     end
 
-    function BladeHits:SendSlash(Equipped, Closest)
-        local LeftClick = Equipped:FindFirstChild("LeftClickRemote")
-        if not LeftClick then return end
-
-        local Direction = (self.__LocalPosition - Closest:GetPivot().Position).Unit
-        for i = 1, 4 do LeftClick:FireServer(Direction, i) end
-    end
-
     function BladeHits:GetClosestCloud()
         if GameInfo.Sea ~= 1 then return end
 
@@ -733,7 +725,6 @@ Module.BladeHits = (function()
 
     function BladeHits:FireTarget(Equipped, Character)
         if not Character then return end
-
         self.__LocalPosition = Character:GetPivot().Position
 
         local ToolTip = Equipped.ToolTip
@@ -757,7 +748,7 @@ Module.BladeHits = (function()
         if Name == "Ice-Ice" or Name == "Light-Light" then
             self:SendHits(Closest, self.__BladeHits)
         elseif ToolTip == "Blox Fruit" then
-            self:SendSlash(Equipped, Closest)
+            return
         else
             self:SendHits(Closest, self.__BladeHits)
         end
@@ -1120,11 +1111,11 @@ Module.EnemiesModule = (function()
     local EnemyLocations, SpawnLocations = {}, {}
 
     local BringBlacklist = {
-        ["Tyrant of the skies"] = true
+        ["Tyrant of the Skies"] = true
     }
 
     local EliteTags = {
-        ["Tyrant of the skies"] = true,
+        ["Tyrant of the Skies"] = true,
         ["Deandre"] = true,
         ["Diablo"] = true,
         ["Urban"] = true,
@@ -3459,7 +3450,7 @@ Module.LeviathanService = (function()
     local SkillManager = Module.SkillManager
 
     function LeviathanService.__Breakable(Enemy, Break)
-        return PlayerManager:IsAlive() or not Module:IsAlive(Enemy) or not _ENV.OnFarm or not (Break and Break())
+        return not PlayerManager:IsAlive() or not Module:IsAlive(Enemy) or not _ENV.OnFarm or not (Break and Break())
     end
 
     function LeviathanService:GetClosestSegment()
